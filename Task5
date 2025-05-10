@@ -1,0 +1,28 @@
+# Log Storage & Retention Management
+
+# Logrotate Implementation
+  Complete SSH Log Management
+    # Verify installed version:
+      logrotate --version
+    # Force immediate rotation:
+      sudo logrotate -vf /etc/logrotate.d/98-websrv-02_sshd.conf
+    # Check generated files:
+      ls -lh /var/log/websrv-02/rsyslog_sshd.log*
+
+# Secure Deletion Protocol
+  GDPR-Compliant Erasure
+    # 1. Backup
+      sudo cp -a /var/log/websrv-02 /backups/
+    # 2. Secure wipe
+      sudo shred -u -n 7 -z /var/log/websrv-02/old_logs.gz
+    # 3. Verify
+      sudo ls -l /var/log/websrv-02/old_logs.gz*
+
+# Verification Steps
+  # Check storage tiers:
+    df -h /var/log /mnt/cold_storage
+  # Verify logrotate:
+    sudo logrotate -d /etc/logrotate.d/98-websrv-02_sshd.conf
+  # Check hashes:
+    tail -n 5 /var/log/websrv-02/hashes_*.txt
+
