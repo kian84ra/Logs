@@ -1,0 +1,58 @@
+# Log Standards
+  Log standards define how logs should be generated, transmitted, and stored. They ensure consistency, interoperability, and compliance across systems.
+
+# Common Event Expression (CEE)
+     Developer: MITRE
+     Purpose: Standardizes log structure for easier analysis
+     Features:
+       - Common taxonomy for event data
+       - Supports both structured and unstructured logs
+     Use Case: Cross-platform log correlation
+
+# OWASP Logging Cheat Sheet
+     Focus: Security logging for developers
+     Key Recommendations:
+       - Log all authentication attempts
+       - Record sensitive operations
+       - Protect log integrity
+     Example:
+     ```log
+       2023-09-08T22:10:00Z SECURITY WARN [auth] Failed login: user=admin source=10.10.133.168
+
+# Syslog Protocol (RFC 5424)
+     Components:
+       - Facility code (e.g., `auth=4`, `cron=9`)
+       - Severity level (0=Emergency to 7=Debug)
+     Example:
+     ```log
+       <34>1 2023-09-08T22:10:00Z WEBSRV-02 sshd 1234 - Password accepted for damianhall
+
+ # NIST SP 800-92
+     Key Requirements:
+       - Retain logs for ≥90 days (compliance)
+       - Implement cryptographic integrity protection
+       - Centralized log collection
+     Retention Tiers:
+       | Tier | Retention | Accessibility |
+       |------|-----------|---------------|
+       | Hot  | 0-3 months| Immediate     |
+       | Warm | 3-24 months| 5 min recall  |
+       | Cold | 2-5 years | 24h recall    |
+
+# Cloud-Specific Standards
+     Azure Monitor Logs:
+       - Uses Kusto Query Language (KQL)
+       - Auto-collects 90+ service logs
+     Google Cloud Logging:
+       - Logs routed through Cloud Pub/Sub
+       - Supports Logs Explorer
+     Oracle Cloud (OCI) Logging:
+       - Unified service for all OCI resources
+       - Integrated with Oracle Functions
+
+# Compliance Mapping
+  | Standard    | HIPAA | PCI-DSS | GDPR |
+  |-------------|-------|---------|------|
+  | CEE         | ✓     | ✓       | ✓    |
+  | NIST 800-92 | ✓     | ✓       | ✓    |
+  | OWASP       | ✓     | ✓       | ✗    |
