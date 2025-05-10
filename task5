@@ -1,0 +1,59 @@
+# Collection, Management, and Centralisation
+
+# SSH Activity Monitoring with rsyslog
+    sudo nano /etc/rsyslog.d/98-sshd.conf
+
+# Verification:
+  sudo systemctl restart rsyslog
+  ssh localhost  # Trigger test event
+  tail -f /var/log/websrv-02/rsyslog_sshd.log
+
+# Log Centralization Options
+  | Method          | Tools                     | Protocol  |
+  |-----------------|---------------------------|-----------|
+  | Agent-Based     | rsyslog, Fluentd          | TCP/UDP   |
+  | Agentless       | WMI (Windows), SNMP       | HTTP/SNMP |
+  | Cloud Native    | AWS CloudWatch, GCP Ops   | REST API  |
+
+# Splunk Forwarding Example:
+  [monitor:///var/log/websrv-02]
+  disabled = false
+  index = linux_logs
+
+## Log Centralization Options
+| Method          | Tools                     | Protocol  |
+|-----------------|---------------------------|-----------|
+| Agent-Based     | rsyslog, Fluentd          | TCP/UDP   |
+| Agentless       | WMI (Windows), SNMP       | HTTP/SNMP |
+| Cloud Native    | AWS CloudWatch, GCP Ops   | REST API  |
+
+# Splunk Forwarding Example:
+  [monitor:///var/log/websrv-02]
+  disabled = false
+  index = linux_logs
+    tar -czvf /backups/logs_$(date +%Y%m%d).tar.gz /var/log/websrv-02
+
+# Hands-on Lab: SSH Log Collection
+   Configure rsyslog to monitor SSH attempts
+   Trigger failed login:
+       ssh invalid_user@localhost
+
+# Common Issues
+  | Symptom               | Diagnostic Command              | Solution                     |
+  |-----------------------|----------------------------------|------------------------------|
+  | No logs generated     | `sudo systemctl status rsyslog`  | Check SELinux/AppArmor       |
+  | Time drift >1s        | `chronyc tracking`               | Force NTP sync               |
+  | Permission denied     | `ls -ld /var/log/websrv-02`      | `chmod 755 /var/log/websrv-02` |
+
+# Log Security Best Practices
+  - Encrypt logs in transit (TLS for rsyslog)
+  - Set strict file permissions:
+      chmod 640 /var/log/websrv-02/*.log
+      chown root:adm /var/log/websrv-02/
+      openssl dgst -sha256 /var/log/websrv-02/rsyslog_sshd.log > log.sha256
+
+# VM-Specific Constraints
+  - No internet → No NTP sync
+  - Limited sudo privileges:
+        sudo -l  # View allowed commands
+
