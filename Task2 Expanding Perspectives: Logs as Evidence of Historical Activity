@@ -1,0 +1,24 @@
+# Log Types and Formats
+
+# Objectives
+  - Identify common log types (Web Server, Security, System)
+  - Recognize log formats (Syslog, JSON, Combined, CSV)
+  - Analyze real-world examples from the TryHackMe VM
+
+# Log Types
+Type            | Description                          | Example Files                     |
+|---------------|--------------------------------------|-----------------------------------|
+| Web Server    | HTTP requests/responses              | `/var/log/nginx/access.log`       |
+| Security      | Authentication events                | `/var/log/auth.log`               |
+| System        | Kernel and hardware events           | `/var/log/syslog`                 |
+| Application   | Specific software messages           | `/var/log/gitlab/gitlab-rail
+
+# Identify Log Formats in the VM
+  # Check Nginx logs (Combined Format):
+    cat /var/log/gitlab/nginx/access.log | head -n 1
+  # View Syslog entries:
+    grep "sshd" /var/log/syslog | tail -n 3
+
+# Convert Logs to JSON
+  cat /var/log/nginx/access.log
+
