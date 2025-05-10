@@ -1,0 +1,30 @@
+# Log Analysis Process
+
+# grep "34.253.159.159" | sort | uniq > filtered.log
+
+# Splunk SPL equivalent:
+  source="/var/log/websrv-02/rsyslog_sshd.log" 
+  | stats count by src_ip 
+  | sort -count
+
+# Analysis Techniques
+  Pattern Recognition
+
+# Detect brute force attempts (from your sshd logs):
+    awk '/Failed password/ {print $11}' /var/log/secure | sort | uniq -c | sort -nr
+  Timeline Analysis
+  # Your timestamp extraction example:
+    awk '{print $1,$2,$3}' /var/log/websrv-02/rsyslog_sshd.log | sort -M
+
+# Verification Steps
+  # Validate parsed output (from your example):
+  head -n 5 /tmp/uniq_sort_parsed_consolidated.log
+  # Check for duplicates:
+  wc -l /tmp/parsed_consolidated.log /tmp/uniq_sort_parsed_consolidated.log
+
+# Anomaly Detection
+  Baseline normal activity:
+    awk '{print $4,$5}' /var/log/websrv-02/rsyslog_cron.log | sort | uniq -c
+  Find deviations:
+    awk '$5 !~ /(updated|cleaned)/ {print}' /var/log/websrv-02/rsyslog_cron.log
+
