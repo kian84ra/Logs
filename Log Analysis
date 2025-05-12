@@ -1,0 +1,210 @@
+# Command Log Analysis Guide
+  less
+    For paginated viewing of large files:
+      less apache.log
+
+  tail
+    View the end of files and follow in real-time:
+      tail -f -n 5 apache.log
+
+  cut
+    Extract specific columns:
+    # Get IP addresses
+      cut -d ' ' -f 1 apache.log
+    # Get URLs
+      cut -d ' ' -f 7 apache.log
+
+  grep
+    Search for patterns:
+    # Find admin access
+      grep "admin" apache.log
+    # Count matches
+      grep -c "admin" apache.log  
+
+# Example
+  if [ -z "$1" ]; then
+    echo "Usage: $0 <logfile>"
+    exit 1
+  fi
+
+  echo "Top IP addresses:"
+  cut -d ' ' -f 1 "$1" | sort | uniq -c | sort -nr | head -10
+
+  echo -e "\nHTTP status codes:"
+  cut -d ' ' -f 9 "$1" | sort | uniq -c | sort -nr
+
+# Investigation Framework
+  Preparation: Know your log sources
+  Identification: Spot anomalies
+  Containment: Limit impact
+  Eradication: Remove threats
+  Recovery: Restore systems
+  Lessons Learned: Improve defenses
+  Timeline Analysis
+  Super timeline concept
+  Tools: Plaso (log2timeline)
+    Example timeline:
+      2023-07-31 12:34:40 - 110.122.65.76 accessed /login.php
+      2023-07-31 12:34:54 - 145.76.33.201 accessed /admin.php
+  Log Correlation Techniques
+  Time synchronization
+  Common identifiers (IPs, user agents)
+  SIEM correlation rules
+
+#  Detection Engineering
+  Indicators of Compromise (IOCs)
+  Attack signatures
+  Behavioral anomalies
+  Common Attack Patterns
+
+  Attack Type	Log Pattern Example
+  Brute Force	Multiple failed logins from single IP
+  SQL Injection	' UNION SELECT in URL parameters
+  XSS	<script> tags in input
+  Path Traversal	../../etc/passwd in requests
+
+# Detection Tools
+  Sigma: Generic signature format
+
+  yaml
+  title: Failed SSH Logins
+  detection:
+    selection:
+      type: 'sshd'
+      a0|contains: 'Failed'
+  YARA: Pattern matching
+
+  yara
+  rule IPFinder {
+    strings: $ip = /([0-9]{1,3}\.){3}[0-9]{1,3}/
+    condition: $ip
+  }
+
+# Practical Analysis Tools
+  Hands-on Exercises:
+  Command Line Analysis
+
+  # Top 10 IPs in logs
+  cut -d ' ' -f 1 apache.log | sort | uniq -c | sort -nr | head -10
+
+  CyberChef Operations
+    Base64 decoding
+    Regular expression extraction
+    Example: Extract IPs with \b([0-9]{1,3}\.){3}[0-9]{1,3}\b
+  SIEM Basics
+    Creating dashboards
+    Setting alerts
+    Log enrichment
+
+# Real-World Scenarios
+  Case Studies:
+    Web Attack Investigation
+      Analyze Apache logs for SQLi attempts
+      Correlate with WAF logs
+
+  Lateral Movement Detection
+    Track suspicious authentication patterns
+    Identify impossible travel scenarios
+
+  Data Exfiltration
+    Detect large outbound transfers
+    Analyze DNS tunneling attempts
+
+# Question 1
+    What command would show the last 20 lines of auth.log in real-time?
+      > Answer: `tail -f -n 20 auth.log`
+
+# Question 2
+    What Sigma field would contain "Failed password" in SSH logs?
+      > Answer: `a0|contains: 'Failed password'`
+
+# Visual Aids:
+  Log flow diagrams
+  Investigation process charts
+  Attack pattern infographics
+
+# Progressive Difficulty:
+  Start with basic log reading
+  Advance to timeline creation
+  Finish with detection rule writing
+
+# Automated vs. Manual Analysis
+ Comparison Table
+  Aspect	                Automated Analysis	                        Manual Analysis
+  Speed	                    High-volume, real-time processing	        Time-intensive, methodical review
+  Tools	                    SIEMs (Splunk, ELK), XPLG, Loggly	         Command line (grep, awk), text editors
+  Best For	               Known patterns, repetitive tasks	            Novel threats, contextual understanding
+  Accuracy	               May produce false positives/negatives	      Precise but limited by analyst bandwidth
+  Cost	                   High (license fees, infrastructure)	        Low (uses exis
+
+# Automate When:
+  Processing >10,000 logs/minute
+  Detecting known IOCs (e.g., malware hashes)
+  Compliance requires continuous monitoring
+
+# Manual Review When:
+  Investigating sophisticated attacks
+  Validating automated alerts
+  Analyzing unfamiliar log formats
+
+# Practical Exercise
+  Scenario: Investigate brute-force attempts in SSH logs
+  Solution:
+    # Count failed attempts per IP
+    grep "Failed password" auth.log | awk '{print $11}' | sort | uniq -c | sort -n
+    # Extract timestamps of attacks
+    grep -oP '^.*?(?= Failed)' auth.log | head -5
+
+# Log Analysis Tools - Regular Expressions
+  Essential Regex Patterns
+  Use Case	                    Pattern	Example Match
+  IPv4 Address	                \b(?:\d{1,3}\.){3}\d{1,3}\b	192.168.1.1
+  HTTP Methods	                `(GET	POST	PUT	DELETE	HEAD)`	POST /login.php HTTP/1.1
+  Timestamp	                     \d{4}-\d{2}-\d{2}T\d{2}:\d{2}	2023-07-20T14:30:45
+  Email Address	                  [\w.-]+@[\w.-]+\.\w{2,4}	user@example.com
+  Suspicious Path                	`(../	\.\.\\)`
+
+# Basic Matching with grep
+  # Find all POST requests
+  grep -E 'POST /.* HTTP' access.log
+  # Detect potential XSS
+  grep -Ei '<script>|alert\(' web.log
+
+# Extraction with awk/sed
+  # Extract URLs with parameters
+  awk '{print $7}' access.log | grep -oP '\/\w+\.php\?.*'
+  # Anonymize IPs (replace last octet)
+  sed -E 's/([0-9]+\.[0-9]+\.[0-9]+\.)[0-9]+/\1XXX/g' logs.txt
+
+# CyberChef Operations
+  Pattern: Extract all MAC addresses
+  Regex: ([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})
+
+  Pattern: Find Base64 strings
+  Regex: (?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?
+
+# CyberChef Core Workflows
+  1. Basic Operations
+    Operation	          Input	                  Output	              Use Case
+    Base64 Decode	      VEhNe0xvZ0FuYWx5c3R9	  THM{LogAnalyst}	      Decode obfuscated logs
+    Extract IPv4	      Raw firewall logs	      203.0.113.45	        Isolate attacker IPs
+    Gunzip	          Compressed .gz logs	      Plaintext logs        Decompress archived logs
+
+Feature	      YARA	                        Sigma
+Best For	    Binary patterns in logs	      SIEM detection rules
+Syntax	      C-like	                      YAML
+Portability	  Limited	                      Cross-SIEM (Elastic, Splunk)
+Pattern Types	Hex/strings/regex	            Field-based conditions
+
+# Tool Ecosystem
+  Triage: grep, awk, jq
+  Analysis: CyberChef, ELK Stack
+  Detection: Sigma, YARA
+  Automation: Splunk, Humio
+
+# Career Pathways
+  SOC Analyst: Log review → alert tuning
+  Threat Hunter: Hypothesis-driven investigations
+  Detection Engineer: Rule creation (Sigma/YARA)
+  IR Consultant: Forensic timeline building
+
